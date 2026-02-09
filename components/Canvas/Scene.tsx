@@ -64,8 +64,8 @@ function MovementLogic() {
             const nextPos = camera.position.clone().add(displacement);
 
             // Raycast at NEXT position to check for floor/stairs/void
-            // We cast from slightly higher to detect steps up
-            raycaster.ray.origin.set(nextPos.x, camera.position.y + 2.0, nextPos.z);
+            // We cast from camera height (eye level) to avoid hitting low ceilings/door headers.
+            raycaster.ray.origin.set(nextPos.x, camera.position.y, nextPos.z);
             // Ensure we look down
             raycaster.ray.direction.set(0, -1, 0);
             raycaster.far = 100; // Reset render distance
