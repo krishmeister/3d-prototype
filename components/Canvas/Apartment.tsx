@@ -6,7 +6,7 @@ import { useFrame } from '@react-three/fiber';
 import { Mesh, Group, Box3, Vector3 } from 'three';
 
 export function Apartment() {
-    const { scene } = useGLTF('/wiser-apartment.glb');
+    const { scene } = useGLTF('/wiser-apartment2.glb');
     const groupRef = useRef<Group>(null);
 
     useLayoutEffect(() => {
@@ -38,4 +38,4 @@ export function Apartment() {
     );
 }
 
-useGLTF.preload('/wiser-apartment.glb');
+useGLTF.preload('/wiser-apartment2.glb');

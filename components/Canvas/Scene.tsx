@@ -8,11 +8,15 @@ import {
     ContactShadows,
     KeyboardControls,
     useKeyboardControls,
-    PointerLockControls
+    PointerLockControls,
+    Sky,
+    Stars
 } from '@react-three/drei';
 import {
     EffectComposer,
-    DepthOfField
+    DepthOfField,
+    Bloom,
+    Noise
 } from '@react-three/postprocessing';
 import gsap from 'gsap';
 import { Vector3, Raycaster } from 'three';
@@ -30,47 +34,84 @@ function MovementLogic() {
     useFrame((state, delta) => {
         if (phase !== 'explore') return;
 
-        // --- GROUND COLLISION (Robust Sky-to-Ground) ---
-        // Raycast from a very high point above the camera's XZ
-        raycaster.ray.origin.set(camera.position.x, 50, camera.position.z);
-        const intersections = raycaster.intersectObjects(scene.children, true);
-
-        let targetY = 1.7; // Default eye level
-        if (intersections.length > 0) {
-            // Find the highest point (ground/floor)
-            const groundY = intersections[0].point.y;
-            targetY = groundY + 1.7;
-        }
-
-        // Smoothly stick to ground
-        camera.position.y = gsap.utils.interpolate(camera.position.y, targetY, delta * 10);
-
-        // --- MOVEMENT ---
-        const { forward, backward, left, right } = getKeys();
+        // --- MOVEMENT & COLLISION ---
+        const { forward, backward, left, right, sprint } = getKeys();
 
         const moveFront = (forward ? 1 : 0) - (backward ? 1 : 0);
         const moveSide = (right ? 1 : 0) - (left ? 1 : 0);
 
-        const camForward = new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-        camForward.y = 0;
-        camForward.normalize();
+        if (moveFront !== 0 || moveSide !== 0) {
+            const camForward = new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            camForward.y = 0;
+            camForward.normalize();
 
-        const camRight = new Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-        camRight.y = 0;
-        camRight.normalize();
+            const camRight = new Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+            camRight.y = 0;
+            camRight.normalize();
 
-        const targetDir = new Vector3()
-            .addScaledVector(camForward, moveFront)
-            .addScaledVector(camRight, moveSide);
+            const targetDir = new Vector3()
+                .addScaledVector(camForward, moveFront)
+                .addScaledVector(camRight, moveSide);
 
-        if (targetDir.length() > 0) targetDir.normalize();
+            if (targetDir.length() > 0) targetDir.normalize();
 
-        const speed = 7;
-        const acceleration = 0.15;
-        velocity.current.lerp(targetDir.multiplyScalar(speed), acceleration);
+            // --- WALL COLLISION CHECK ---
+            // Raycast in the direction of movement to detect walls
+            raycaster.ray.origin.copy(camera.position);
+            // Lower slightly to body/chest level for better wall detection (eye level might miss low obstacles)
+            raycaster.ray.origin.y -= 0.5;
+            raycaster.ray.direction.copy(targetDir);
+            raycaster.far = 1.0; // Detect walls within 1 meter
 
-        const deltaMove = velocity.current.clone().multiplyScalar(delta);
-        camera.position.add(deltaMove);
+            const wallHits = raycaster.intersectObjects(scene.children, true);
+
+            // If we hit a wall, we simply don't move. 
+            // Improvements could include "sliding" along the wall, but blocking is safer for now.
+            if (wallHits.length > 0) {
+                // Collision! Do nothing.
+            } else {
+                // No wall, proceed with movement and floor check
+                const speed = sprint ? 14 : 7;
+                const displacement = targetDir.multiplyScalar(speed * delta);
+
+                // Predict next position
+                const nextPos = camera.position.clone().add(displacement);
+
+                // Raycast at NEXT position to check for floor/stairs/void
+                // We cast from slightly higher to detect steps up
+                raycaster.ray.origin.set(nextPos.x, camera.position.y + 1.0, nextPos.z);
+                // Ensure we look down
+                raycaster.ray.direction.set(0, -1, 0);
+                raycaster.far = 100; // Reset render distance for floor check
+
+                const intersections = raycaster.intersectObjects(scene.children, true);
+
+                if (intersections.length > 0) {
+                    const groundY = intersections[0].point.y;
+                    const currentFootY = camera.position.y - 1.7;
+
+                    // STAIR/STEP LOGIC:
+                    if (groundY - currentFootY < 0.7) {
+                        // Valid move
+                        camera.position.x = nextPos.x;
+                        camera.position.z = nextPos.z;
+
+                        // Smoothly adjust height to new floor
+                        const targetHeight = groundY + 1.7;
+                        camera.position.y = gsap.utils.interpolate(camera.position.y, targetHeight, delta * 15);
+                    }
+                }
+            }
+        } else {
+            // Idle - just keep grounded at current position
+            raycaster.ray.origin.set(camera.position.x, camera.position.y + 1.0, camera.position.z);
+            raycaster.ray.direction.set(0, -1, 0);
+            const intersections = raycaster.intersectObjects(scene.children, true);
+            if (intersections.length > 0) {
+                const groundY = intersections[0].point.y;
+                camera.position.y = gsap.utils.interpolate(camera.position.y, groundY + 1.7, delta * 10);
+            }
+        }
     });
 
     return null;
@@ -141,7 +182,7 @@ function CameraRig() {
 
     return (
         <>
-            <EffectComposer disableNormalPass>
+            <EffectComposer>
                 <DepthOfField
                     ref={dofRef}
                     target={[0, 1, 0]}
@@ -149,6 +190,8 @@ function CameraRig() {
                     bokehScale={2}
                     height={480}
                 />
+                <Bloom luminanceThreshold={1} mipmapBlur intensity={0.5} />
+                <Noise opacity={0.02} />
             </EffectComposer>
 
             {phase === 'setup' ? (
@@ -174,6 +217,7 @@ export function Scene() {
         { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
         { name: 'left', keys: ['ArrowLeft', 'KeyA'] },
         { name: 'right', keys: ['ArrowRight', 'KeyD'] },
+        { name: 'sprint', keys: ['ShiftLeft', 'ShiftRight'] },
     ], []);
 
     const setPhase = useStore((state) => state.setPhase);
@@ -189,7 +233,17 @@ export function Scene() {
                     <CameraRig />
                     {/* The Apartment component now auto-grounds itself to [0,0,0] */}
                     <Apartment />
+                    <Sky sunPosition={[100, 20, 100]} />
+                    <Stars radius={300} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
                     <Environment preset="city" />
+                    <directionalLight
+                        position={[100, 20, 100]}
+                        intensity={1.5}
+                        castShadow
+                        shadow-mapSize={[1024, 1024]}
+                    >
+                        <orthographicCamera attach="shadow-camera" args={[-50, 50, 50, -50]} />
+                    </directionalLight>
                     <ContactShadows
                         position={[0, -0.01, 0]}
                         opacity={0.4}
