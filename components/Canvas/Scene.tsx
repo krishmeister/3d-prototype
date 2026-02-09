@@ -56,54 +56,39 @@ function MovementLogic() {
 
             if (targetDir.length() > 0) targetDir.normalize();
 
-            // --- WALL COLLISION CHECK ---
-            // Raycast in the direction of movement to detect walls
-            raycaster.ray.origin.copy(camera.position);
-            // We cast from eye level/head height. 
-            // This avoids hitting stair risers (which are low) but hits walls.
-            // It also usually passes under door headers (unless player is very tall or door very low).
-            raycaster.ray.direction.copy(targetDir);
-            raycaster.far = 0.5; // Keep it close to avoid hitting things far away
+            // --- MOVEMENT LOGIC (No Wall Collision, Only Floor/Edge Check) ---
+            const speed = sprint ? 14 : 7;
+            const displacement = targetDir.multiplyScalar(speed * delta);
 
-            const wallHits = raycaster.intersectObjects(scene.children, true);
+            // Predict next position
+            const nextPos = camera.position.clone().add(displacement);
 
-            // If we hit a wall, we simply don't move. 
-            // Improvements could include "sliding" along the wall, but blocking is safer for now.
-            if (wallHits.length > 0) {
-                // Collision! Do nothing.
-            } else {
-                // No wall, proceed with movement and floor check
-                const speed = sprint ? 14 : 7;
-                const displacement = targetDir.multiplyScalar(speed * delta);
+            // Raycast at NEXT position to check for floor/stairs/void
+            // We cast from slightly higher to detect steps up
+            raycaster.ray.origin.set(nextPos.x, camera.position.y + 2.0, nextPos.z);
+            // Ensure we look down
+            raycaster.ray.direction.set(0, -1, 0);
+            raycaster.far = 100; // Reset render distance
 
-                // Predict next position
-                const nextPos = camera.position.clone().add(displacement);
+            const intersections = raycaster.intersectObjects(scene.children, true);
 
-                // Raycast at NEXT position to check for floor/stairs/void
-                // We cast from slightly higher to detect steps up
-                raycaster.ray.origin.set(nextPos.x, camera.position.y + 2.0, nextPos.z);
-                // Ensure we look down
-                raycaster.ray.direction.set(0, -1, 0);
-                raycaster.far = 100; // Reset render distance
+            if (intersections.length > 0) {
+                const groundY = intersections[0].point.y;
+                const currentFootY = camera.position.y - 1.7;
 
-                const intersections = raycaster.intersectObjects(scene.children, true);
+                // STAIR/STEP LOGIC:
+                // Increased threshold to 1.5 to allow climbing steeper/taller stairs
+                if (groundY - currentFootY < 1.5) {
+                    // Valid move
+                    camera.position.x = nextPos.x;
+                    camera.position.z = nextPos.z;
 
-                if (intersections.length > 0) {
-                    const groundY = intersections[0].point.y;
-                    const currentFootY = camera.position.y - 1.7;
-
-                    // STAIR/STEP LOGIC:
-                    // Increased threshold to 1.5 to allow climbing steeper/taller stairs
-                    if (groundY - currentFootY < 1.5) {
-                        // Valid move
-                        camera.position.x = nextPos.x;
-                        camera.position.z = nextPos.z;
-
-                        // Smoothly adjust height to new floor
-                        const targetHeight = groundY + 1.7;
-                        camera.position.y = gsap.utils.interpolate(camera.position.y, targetHeight, delta * 15);
-                    }
+                    // Smoothly adjust height to new floor
+                    const targetHeight = groundY + 1.7;
+                    camera.position.y = gsap.utils.interpolate(camera.position.y, targetHeight, delta * 15);
                 }
+            } else {
+                // Void/Edge detected - do not move X/Z (prevents falling off map)
             }
         } else {
             // Idle - just keep grounded at current position
