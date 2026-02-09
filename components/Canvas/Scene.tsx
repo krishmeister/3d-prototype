@@ -193,7 +193,7 @@ function CameraRig() {
                     bokehScale={2}
                     height={480}
                 />
-                <Bloom luminanceThreshold={1} mipmapBlur intensity={0.5} />
+                <Bloom luminanceThreshold={2} mipmapBlur intensity={0.2} />
                 <Noise opacity={0.02} />
             </EffectComposer>
 
@@ -242,7 +242,7 @@ export function Scene() {
                         <Environment preset="city" />
                         <directionalLight
                             position={[100, 20, 100]}
-                            intensity={1.5}
+                            intensity={0.8}
                             castShadow
                             shadow-mapSize={[1024, 1024]}
                         >
