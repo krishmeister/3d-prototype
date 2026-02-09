@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import {
     OrbitControls,
@@ -10,7 +10,8 @@ import {
     useKeyboardControls,
     PointerLockControls,
     Sky,
-    Stars
+    Stars,
+    Loader
 } from '@react-three/drei';
 import {
     EffectComposer,
@@ -230,29 +231,31 @@ export function Scene() {
         <div className="h-full w-full bg-black">
             <KeyboardControls map={map}>
                 <Canvas shadows camera={{ fov: 45 }}>
-                    <CameraRig />
-                    {/* The Apartment component now auto-grounds itself to [0,0,0] */}
-                    <Apartment />
-                    <Sky sunPosition={[100, 20, 100]} />
-                    <Stars radius={300} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-                    <Environment preset="city" />
-                    <directionalLight
-                        position={[100, 20, 100]}
-                        intensity={1.5}
-                        castShadow
-                        shadow-mapSize={[1024, 1024]}
-                    >
-                        <orthographicCamera attach="shadow-camera" args={[-50, 50, 50, -50]} />
-                    </directionalLight>
-                    <ContactShadows
-                        position={[0, -0.01, 0]}
-                        opacity={0.4}
-                        scale={50}
-                        blur={2}
-                        far={10}
-                        resolution={256}
-                        color="#000000"
-                    />
+                    <Suspense fallback={null}>
+                        <CameraRig />
+                        {/* The Apartment component now auto-grounds itself to [0,0,0] */}
+                        <Apartment />
+                        <Sky sunPosition={[100, 20, 100]} />
+                        <Stars radius={300} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+                        <Environment preset="city" />
+                        <directionalLight
+                            position={[100, 20, 100]}
+                            intensity={1.5}
+                            castShadow
+                            shadow-mapSize={[1024, 1024]}
+                        >
+                            <orthographicCamera attach="shadow-camera" args={[-50, 50, 50, -50]} />
+                        </directionalLight>
+                        <ContactShadows
+                            position={[0, -0.01, 0]}
+                            opacity={0.4}
+                            scale={50}
+                            blur={2}
+                            far={10}
+                            resolution={256}
+                            color="#000000"
+                        />
+                    </Suspense>
                 </Canvas>
             </KeyboardControls>
         </div>
