@@ -59,10 +59,11 @@ function MovementLogic() {
             // --- WALL COLLISION CHECK ---
             // Raycast in the direction of movement to detect walls
             raycaster.ray.origin.copy(camera.position);
-            // Lower slightly to body/chest level for better wall detection (eye level might miss low obstacles)
-            raycaster.ray.origin.y -= 0.5;
+            // We cast from eye level/head height. 
+            // This avoids hitting stair risers (which are low) but hits walls.
+            // It also usually passes under door headers (unless player is very tall or door very low).
             raycaster.ray.direction.copy(targetDir);
-            raycaster.far = 1.0; // Detect walls within 1 meter
+            raycaster.far = 0.5; // Keep it close to avoid hitting things far away
 
             const wallHits = raycaster.intersectObjects(scene.children, true);
 
@@ -80,10 +81,10 @@ function MovementLogic() {
 
                 // Raycast at NEXT position to check for floor/stairs/void
                 // We cast from slightly higher to detect steps up
-                raycaster.ray.origin.set(nextPos.x, camera.position.y + 1.0, nextPos.z);
+                raycaster.ray.origin.set(nextPos.x, camera.position.y + 2.0, nextPos.z);
                 // Ensure we look down
                 raycaster.ray.direction.set(0, -1, 0);
-                raycaster.far = 100; // Reset render distance for floor check
+                raycaster.far = 100; // Reset render distance
 
                 const intersections = raycaster.intersectObjects(scene.children, true);
 
@@ -92,7 +93,8 @@ function MovementLogic() {
                     const currentFootY = camera.position.y - 1.7;
 
                     // STAIR/STEP LOGIC:
-                    if (groundY - currentFootY < 0.7) {
+                    // Increased threshold to 1.5 to allow climbing steeper/taller stairs
+                    if (groundY - currentFootY < 1.5) {
                         // Valid move
                         camera.position.x = nextPos.x;
                         camera.position.z = nextPos.z;
