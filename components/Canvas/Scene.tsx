@@ -41,6 +41,22 @@ const _camRight = new Vector3();
 const _targetDir = new Vector3();
 const _nextPos = new Vector3();
 
+function DebugLogger() {
+    useFrame((state) => {
+        const overlay = document.getElementById('debug-overlay');
+        if (overlay) {
+            const { x, y, z } = state.camera.position;
+            const elX = document.getElementById('debug-x');
+            const elY = document.getElementById('debug-y');
+            const elZ = document.getElementById('debug-z');
+            if (elX) elX.innerText = x.toFixed(2);
+            if (elY) elY.innerText = y.toFixed(2);
+            if (elZ) elZ.innerText = z.toFixed(2);
+        }
+    });
+    return null;
+}
+
 function MovementLogic() {
     const { camera, scene } = useThree();
     const [, getKeys] = useKeyboardControls();
@@ -287,19 +303,7 @@ export function Scene() {
 
 
 
-    // Debug: Update coordinate display
-    useFrame((state) => {
-        const overlay = document.getElementById('debug-overlay');
-        if (overlay) {
-            const { x, y, z } = state.camera.position;
-            const elX = document.getElementById('debug-x');
-            const elY = document.getElementById('debug-y');
-            const elZ = document.getElementById('debug-z');
-            if (elX) elX.innerText = x.toFixed(2);
-            if (elY) elY.innerText = y.toFixed(2);
-            if (elZ) elZ.innerText = z.toFixed(2);
-        }
-    });
+
 
     return (
         <div className="h-full w-full bg-black">
@@ -312,6 +316,7 @@ export function Scene() {
                     performance={{ min: 0.5 }}
                 >
                     <Suspense fallback={null}>
+                        <DebugLogger />
                         <CameraRig />
                         <Apartment />
 
