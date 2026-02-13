@@ -1,0 +1,88 @@
+.touch-controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40vh;
+    z-index: 100;
+    pointer-events: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 20px 30px 20px;
+}
+
+/* === Virtual Joystick === */
+.joystick-zone {
+    pointer-events: auto;
+    width: 140px;
+    height: 140px;
+    position: relative;
+    touch-action: none;
+}
+
+.joystick-base {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    position: absolute;
+    top: 0;
+    left: 0;
+    backdrop-filter: blur(4px);
+}
+
+.joystick-knob {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.15) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: none;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+}
+
+/* === Touch Look Zone === */
+.touch-look-zone {
+    pointer-events: auto;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    backdrop-filter: blur(2px);
+}
+
+.touch-look-icon {
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 28px;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* === Mobile hint === */
+.mobile-hint {
+    position: fixed;
+    bottom: calc(40vh + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 101;
+    pointer-events: none;
+}
+
+.mobile-hint-text {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+}

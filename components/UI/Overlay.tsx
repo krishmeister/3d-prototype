@@ -6,12 +6,12 @@ import { useStore } from '@/store/useStore';
 export function Overlay() {
     const phase = useStore((state) => state.phase);
     const startExperience = useStore((state) => state.startExperience);
+    const isMobile = useStore((state) => state.isMobile);
 
     // Force reset to setup on full page load
     useEffect(() => {
-        // This handles cases where dev server hot reloading might persist state
         if (typeof window !== 'undefined' && window.performance.navigation.type === 1) {
-            // Hard refresh or fresh load - optionally reset here or in store init
+            // Hard refresh or fresh load
         }
     }, []);
     return (
@@ -41,10 +41,13 @@ export function Overlay() {
             >
                 <div className="bg-white/10 backdrop-blur-md border border-white/10 px-6 py-3 rounded-full shadow-lg">
                     <p className="text-white/70 text-sm font-medium">
-                        WASD/Arrows to walk • Mouse to look
+                        {isMobile
+                            ? 'Use joystick to move • Swipe to look'
+                            : 'WASD/Arrows to walk • Mouse to look'}
                     </p>
                 </div>
             </div>
         </div>
     );
 }
+
