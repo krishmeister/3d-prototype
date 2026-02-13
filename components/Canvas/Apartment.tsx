@@ -27,15 +27,9 @@ export interface LightPosition {
     position: [number, number, number];
 }
 
-interface ApartmentProps {
-    onLightsDetected?: (lights: LightPosition[]) => void;
-}
-
-export function Apartment({ onLightsDetected }: ApartmentProps) {
+export function Apartment() {
     const { scene } = useGLTF('/wiser-apartment2.glb');
     const groupRef = useRef<Group>(null);
-    const lightsDetectedRef = useRef(false);
-    const sceneReadyRef = useRef(false);
 
     // Step 1: Reposition the scene and fix materials (runs before paint)
     useLayoutEffect(() => {
@@ -87,61 +81,7 @@ export function Apartment({ onLightsDetected }: ApartmentProps) {
                 }
             }
         });
-
-        sceneReadyRef.current = true;
     }, [scene]);
-
-    // Step 2: Detect lights inside the render loop AFTER Three.js has updated all world matrices.
-    // useLayoutEffect runs before the renderer, so world matrices may not be correct yet.
-    // useFrame runs INSIDE the render loop, guaranteeing consistent positions everywhere.
-    useFrame(() => {
-        if (lightsDetectedRef.current || !sceneReadyRef.current || !onLightsDetected) return;
-        lightsDetectedRef.current = true;
-
-        const lightMeshPositions: Map<string, Vector3[]> = new Map();
-
-        scene.traverse((obj) => {
-            if (obj instanceof Mesh) {
-                const mat = obj.material as MeshStandardMaterial;
-
-                if (PENDANT_LIGHT_MATERIALS.has(mat?.name)) {
-                    const worldPos = new Vector3();
-                    const meshBox = new Box3().setFromObject(obj);
-                    meshBox.getCenter(worldPos);
-
-                    let foundCluster = false;
-                    for (const [, positions] of lightMeshPositions) {
-                        const clusterCenter = positions[0];
-                        const dist = new Vector3(worldPos.x, 0, worldPos.z)
-                            .distanceTo(new Vector3(clusterCenter.x, 0, clusterCenter.z));
-                        if (dist < 5) {
-                            positions.push(worldPos.clone());
-                            foundCluster = true;
-                            break;
-                        }
-                    }
-                    if (!foundCluster) {
-                        lightMeshPositions.set(`light_${lightMeshPositions.size}`, [worldPos.clone()]);
-                    }
-                }
-            }
-        });
-
-        const lights: LightPosition[] = [];
-        let idx = 0;
-        for (const [, positions] of lightMeshPositions) {
-            const avg = new Vector3();
-            positions.forEach(p => avg.add(p));
-            avg.divideScalar(positions.length);
-            lights.push({
-                id: `pendant_light_${idx}`,
-                position: [avg.x, 0.1, avg.z],
-            });
-            idx++;
-        }
-        console.log('Detected pendant lights (useFrame):', JSON.stringify(lights));
-        onLightsDetected(lights);
-    });
 
     return (
         <group ref={groupRef} name="apartment-group">

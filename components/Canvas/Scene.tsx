@@ -22,9 +22,14 @@ import {
 import gsap from 'gsap';
 import { Vector3, Raycaster, MathUtils } from 'three';
 import { useStore } from '@/store/useStore';
-import { Apartment, LightPosition } from './Apartment';
+import { Apartment } from './Apartment';
 import { HereArrow } from './HereArrow';
 import { PendantPointLight } from './PendantPointLight';
+
+interface LightPosition {
+    id: string;
+    position: [number, number, number];
+}
 
 // Shared flag: true while the camera is animating from orbit → explore spawn
 // This prevents MovementLogic from fighting with the GSAP tween
@@ -257,12 +262,14 @@ export function Scene() {
     const setPhase = useStore((state) => state.setPhase);
     const phase = useStore((state) => state.phase);
     const setActiveLightId = useStore((state) => state.setActiveLightId);
-    const [lightPositions, setLightPositions] = useState<LightPosition[]>([]);
 
-    const handleLightsDetected = useCallback((lights: LightPosition[]) => {
-        console.log('Detected pendant lights:', lights);
-        setLightPositions(lights);
-    }, []);
+    // Hardcoded light positions to ensure stability and avoid runtime detection issues
+    const lightPositions: LightPosition[] = useMemo(() => [
+        { id: 'light_main_1', position: [4.2, 0.1, -10.5] },
+        { id: 'light_main_2', position: [19.2, 0.1, -9.8] },
+    ], []);
+
+    // Removed handleLightsDetected as we are using fixed positions
 
     const handleProximityEnter = useCallback((id: string) => {
         console.log(`[HereArrow] Player entered proximity of: ${id}`);
@@ -290,7 +297,7 @@ export function Scene() {
                 >
                     <Suspense fallback={null}>
                         <CameraRig />
-                        <Apartment onLightsDetected={handleLightsDetected} />
+                        <Apartment />
 
                         {/* HereArrow markers near pendant lights - only visible in explore mode */}
                         {phase === 'explore' && lightPositions.map((light) => (
