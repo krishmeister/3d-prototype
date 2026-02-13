@@ -92,31 +92,29 @@ export function TouchControls() {
     if (!isMobile || phase !== 'explore') return null;
 
     return (
-        <>
-            <div className="touch-controls">
-                {/* Left: Virtual Joystick */}
-                <div
-                    className="joystick-zone"
-                    onTouchStart={onJoystickStart}
-                    onTouchMove={onJoystickMove}
-                    onTouchEnd={onJoystickEnd}
-                    onTouchCancel={onJoystickEnd}
-                >
-                    <div className="joystick-base" />
-                    <div className="joystick-knob" ref={knobRef} />
-                </div>
-
-                {/* Right: Touch Look */}
-                <div
-                    className="touch-look-zone"
-                    onTouchStart={onLookStart}
-                    onTouchMove={onLookMove}
-                    onTouchEnd={onLookEnd}
-                    onTouchCancel={onLookEnd}
-                >
-                    <span className="touch-look-icon">👁</span>
-                </div>
+        <div className="touch-controls">
+            {/* Left: Virtual Joystick */}
+            <div
+                className="joystick-zone"
+                onTouchStart={onJoystickStart}
+                onTouchMove={onJoystickMove}
+                onTouchEnd={onJoystickEnd}
+                onTouchCancel={onJoystickEnd}
+            >
+                <div className="joystick-base" />
+                <div className="joystick-knob" ref={knobRef} />
             </div>
-        </>
+
+            {/* Right: Touch Look (Full Right Half) */}
+            <div
+                className="touch-look-zone"
+                onTouchStart={onLookStart}
+                onTouchMove={onLookMove}
+                onTouchEnd={onLookEnd}
+                onTouchCancel={onLookEnd}
+            >
+                <div className="look-hint-icon">👁</div>
+            </div>
+        </div>
     );
 }
