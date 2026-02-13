@@ -15,7 +15,6 @@ import {
 } from '@react-three/drei';
 import {
     EffectComposer,
-    DepthOfField,
     Bloom,
     Noise
 } from '@react-three/postprocessing';
@@ -69,7 +68,7 @@ function MovementLogic() {
                 .addScaledVector(_camRight, moveSide);
             if (_targetDir.lengthSq() > 0) _targetDir.normalize();
 
-            const speed = sprint ? 14 : 7;
+            const speed = sprint ? 16 : 10;
             _targetDir.multiplyScalar(speed * delta);
 
             _nextPos.copy(camera.position).add(_targetDir);
@@ -146,7 +145,6 @@ function CameraRig() {
     const { camera } = useThree();
     const phase = useStore((state) => state.phase);
     const activeLightId = useStore((state) => state.activeLightId);
-    const dofRef = useRef<any>(null);
     const orbitRef = useRef<any>(null);
     const pointerLockRef = useRef<any>(null);
 
@@ -201,27 +199,13 @@ function CameraRig() {
                 }
             });
 
-            if (dofRef.current) {
-                gsap.to(dofRef.current, {
-                    focusDistance: 0.9,
-                    focalLength: 0.01,
-                    duration: 2.5,
-                    ease: 'power2.inOut',
-                });
-            }
+
         }
     }, [phase, camera]);
 
     return (
         <>
             <EffectComposer multisampling={4}>
-                <DepthOfField
-                    ref={dofRef}
-                    target={[0, 1, 0]}
-                    focalLength={0.02}
-                    bokehScale={2}
-                    height={720}
-                />
                 <Bloom luminanceThreshold={2} mipmapBlur intensity={0.2} />
                 <Noise opacity={0.02} />
             </EffectComposer>
