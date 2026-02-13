@@ -5,6 +5,7 @@ import { Scene } from '@/components/Canvas/Scene';
 import { Overlay } from '@/components/UI/Overlay';
 import { PhoneUI } from '@/components/UI/PhoneUI';
 import { TouchControls } from '@/components/UI/TouchControls';
+import { LandscapePrompt } from '@/components/UI/LandscapePrompt';
 import { useDeviceDetect } from '@/hooks/useDeviceDetect';
 import { useStore } from '@/store/useStore';
 
@@ -25,6 +26,8 @@ export default function Home() {
             <Overlay />
             <PhoneUI />
             <TouchControls />
+            <LandscapePrompt />
         </main>
     );
 }
+
