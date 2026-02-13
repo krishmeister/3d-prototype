@@ -52,6 +52,11 @@ function MovementLogic() {
     useFrame((_, delta) => {
         if (phase !== 'explore' || transitionState.active) return;
 
+        // Optimization: Find the apartment model to raycast against specifically
+        // This avoids checking every object in the scene (lights, stars, etc.)
+        const apartmentModel = scene.getObjectByName('apartment-model');
+        const raycastTarget = apartmentModel ? [apartmentModel] : scene.children;
+
         const { forward, backward, left, right, sprint } = getKeys();
         const moveFront = (forward ? 1 : 0) - (backward ? 1 : 0);
         const moveSide = (right ? 1 : 0) - (left ? 1 : 0);
@@ -79,7 +84,7 @@ function MovementLogic() {
             raycaster.ray.direction.set(0, -1, 0);
             raycaster.far = 100;
 
-            const intersections = raycaster.intersectObjects(scene.children, true);
+            const intersections = raycaster.intersectObjects(raycastTarget, true);
 
             if (intersections.length > 0) {
                 const groundY = intersections[0].point.y;
@@ -95,7 +100,7 @@ function MovementLogic() {
         } else {
             raycaster.ray.origin.set(camera.position.x, camera.position.y + 1.0, camera.position.z);
             raycaster.ray.direction.set(0, -1, 0);
-            const intersections = raycaster.intersectObjects(scene.children, true);
+            const intersections = raycaster.intersectObjects(raycastTarget, true);
             if (intersections.length > 0) {
                 const groundY = intersections[0].point.y;
                 camera.position.y = MathUtils.lerp(camera.position.y, groundY + 1.7, Math.min(delta * 20, 1));
@@ -477,7 +482,7 @@ export function Scene() {
                 <Canvas
                     shadows
                     camera={{ fov: 45 }}
-                    dpr={[1, 2]}
+                    dpr={[1, 1.5]}
                     gl={{ antialias: true, powerPreference: 'high-performance' }}
                     performance={{ min: 0.5 }}
                 >
