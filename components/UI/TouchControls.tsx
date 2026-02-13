@@ -16,15 +16,22 @@ export function TouchControls() {
 
     // Joystick state
     const joystickOrigin = useRef<{ x: number; y: number } | null>(null);
+    const joystickTouchId = useRef<number | null>(null);
     const knobRef = useRef<HTMLDivElement>(null);
 
     // Touch-look state
-    const lastTouchPos = useRef<{ x: number; y: number } | null>(null);
+    const lookTouchId = useRef<number | null>(null);
+    const lastLookPos = useRef<{ x: number; y: number } | null>(null);
 
     // ── Joystick handlers ──
     const onJoystickStart = useCallback((e: React.TouchEvent) => {
         e.preventDefault();
-        const touch = e.touches[0];
+        // Just take the first changed touch if we don't have one yet
+        if (joystickTouchId.current !== null) return;
+
+        const touch = e.changedTouches[0];
+        joystickTouchId.current = touch.identifier;
+
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         joystickOrigin.current = {
             x: rect.left + rect.width / 2,
@@ -34,9 +41,18 @@ export function TouchControls() {
 
     const onJoystickMove = useCallback((e: React.TouchEvent) => {
         e.preventDefault();
-        if (!joystickOrigin.current || !knobRef.current) return;
+        if (joystickTouchId.current === null || !joystickOrigin.current || !knobRef.current) return;
 
-        const touch = e.touches[0];
+        // Find the specific touch we are tracking
+        let touch: React.Touch | undefined;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === joystickTouchId.current) {
+                touch = e.changedTouches[i];
+                break;
+            }
+        }
+        if (!touch) return; // The touch moving isn't the joystick one
+
         const maxDist = 42; // max knob travel in px
         let dx = touch.clientX - joystickOrigin.current.x;
         let dy = touch.clientY - joystickOrigin.current.y;
@@ -55,7 +71,22 @@ export function TouchControls() {
         setJoystickInput(dx / maxDist, -dy / maxDist); // negative Y = forward
     }, [setJoystickInput]);
 
-    const onJoystickEnd = useCallback(() => {
+    const onJoystickEnd = useCallback((e: React.TouchEvent) => {
+        e.preventDefault();
+        if (joystickTouchId.current === null) return;
+
+        // Check if the ended touch is the joystick one
+        let isJoystickTouch = false;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === joystickTouchId.current) {
+                isJoystickTouch = true;
+                break;
+            }
+        }
+        if (!isJoystickTouch) return;
+
+        // Reset
+        joystickTouchId.current = null;
         joystickOrigin.current = null;
         if (knobRef.current) {
             knobRef.current.style.transform = 'translate(-50%, -50%)';
@@ -66,25 +97,51 @@ export function TouchControls() {
     // ── Touch-look handlers ──
     const onLookStart = useCallback((e: React.TouchEvent) => {
         e.preventDefault();
-        const touch = e.touches[0];
-        lastTouchPos.current = { x: touch.clientX, y: touch.clientY };
+        if (lookTouchId.current !== null) return;
+
+        const touch = e.changedTouches[0];
+        lookTouchId.current = touch.identifier;
+        lastLookPos.current = { x: touch.clientX, y: touch.clientY };
     }, []);
 
     const onLookMove = useCallback((e: React.TouchEvent) => {
         e.preventDefault();
-        if (!lastTouchPos.current) return;
+        if (lookTouchId.current === null || !lastLookPos.current) return;
 
-        const touch = e.touches[0];
-        const dx = touch.clientX - lastTouchPos.current.x;
-        const dy = touch.clientY - lastTouchPos.current.y;
-        lastTouchPos.current = { x: touch.clientX, y: touch.clientY };
+        // Find the specific touch we are tracking
+        let touch: React.Touch | undefined;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === lookTouchId.current) {
+                touch = e.changedTouches[i];
+                break;
+            }
+        }
+        if (!touch) return;
+
+        const dx = touch.clientX - lastLookPos.current.x;
+        const dy = touch.clientY - lastLookPos.current.y;
+        lastLookPos.current = { x: touch.clientX, y: touch.clientY };
 
         // Sensitivity multiplier
         setTouchLookDelta(dx * 0.003, dy * 0.003);
     }, [setTouchLookDelta]);
 
-    const onLookEnd = useCallback(() => {
-        lastTouchPos.current = null;
+    const onLookEnd = useCallback((e: React.TouchEvent) => {
+        e.preventDefault();
+        if (lookTouchId.current === null) return;
+
+        // Check if the ended touch is the look one
+        let isLookTouch = false;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === lookTouchId.current) {
+                isLookTouch = true;
+                break;
+            }
+        }
+        if (!isLookTouch) return;
+
+        lookTouchId.current = null;
+        lastLookPos.current = null;
         setTouchLookDelta(0, 0);
     }, [setTouchLookDelta]);
 
