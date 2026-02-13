@@ -1,7 +1,6 @@
 import { Scene } from '@/components/Canvas/Scene';
 import { Overlay } from '@/components/UI/Overlay';
 import { PhoneUI } from '@/components/UI/PhoneUI';
-import { DebugOverlay } from '@/components/UI/DebugOverlay';
 
 export default function Home() {
     return (
@@ -11,7 +10,6 @@ export default function Home() {
             </div>
             <Overlay />
             <PhoneUI />
-            <DebugOverlay />
         </main>
     );
 }

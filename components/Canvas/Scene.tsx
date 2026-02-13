@@ -41,22 +41,6 @@ const _camRight = new Vector3();
 const _targetDir = new Vector3();
 const _nextPos = new Vector3();
 
-function DebugLogger() {
-    useFrame((state) => {
-        const overlay = document.getElementById('debug-overlay');
-        if (overlay) {
-            const { x, y, z } = state.camera.position;
-            const elX = document.getElementById('debug-x');
-            const elY = document.getElementById('debug-y');
-            const elZ = document.getElementById('debug-z');
-            if (elX) elX.innerText = x.toFixed(2);
-            if (elY) elY.innerText = y.toFixed(2);
-            if (elZ) elZ.innerText = z.toFixed(2);
-        }
-    });
-    return null;
-}
-
 function MovementLogic() {
     const { camera, scene } = useThree();
     const [, getKeys] = useKeyboardControls();
@@ -281,8 +265,8 @@ export function Scene() {
 
     // Hardcoded light positions to ensure stability and avoid runtime detection issues
     const lightPositions: LightPosition[] = useMemo(() => [
-        { id: 'light_main_1', position: [4.2, 0.4, -10.5] },
-        { id: 'light_main_2', position: [19.2, 0.4, -9.8] },
+        { id: 'light_main_1', position: [9.32, 0.4, -14.01] },
+        // { id: 'light_main_2', position: [19.2, 0.4, -9.8] }, // Temporarily disabled second arrow to focus on the user's target
     ], []);
 
     // Removed handleLightsDetected as we are using fixed positions
@@ -316,7 +300,6 @@ export function Scene() {
                     performance={{ min: 0.5 }}
                 >
                     <Suspense fallback={null}>
-                        <DebugLogger />
                         <CameraRig />
                         <Apartment />
 
