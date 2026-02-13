@@ -51,6 +51,10 @@ export function Apartment({ onLightsDetected }: ApartmentProps) {
         scene.position.y = -box.min.y;
         scene.position.z = -center.z;
 
+        // Force ALL child world matrices to update with the new position offset
+        // This is critical for consistent light detection across environments
+        scene.updateMatrixWorld(true);
+
         // First pass: collect a reference sandstone wall texture from a known wall material
         let wallTexture: any = null;
         scene.traverse((obj) => {
