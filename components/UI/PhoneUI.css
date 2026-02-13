@@ -17,21 +17,19 @@
     pointer-events: auto;
 }
 
-/* Mobile specific overrides */
-@media (max-width: 900px) and (orientation: landscape) {
-    .phone-container {
-        left: auto;
-        right: 20px;
-        bottom: -500px;
-        /* Hidden state */
-        transform: scale(0.7);
-        transform-origin: bottom right;
-    }
+/* Mobile specific overrides using class from store */
+.phone-container.is-mobile {
+    left: auto !important;
+    right: 20px !important;
+    bottom: -500px;
+    transform: scale(0.65);
+    /* Made it slightly smaller */
+    transform-origin: bottom right;
+}
 
-    .phone-container.phone-visible {
-        bottom: 20px;
-        right: 20px;
-    }
+.phone-container.is-mobile.phone-visible {
+    bottom: 20px;
+    right: 20px !important;
 }
 
 

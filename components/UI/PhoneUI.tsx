@@ -8,6 +8,7 @@ export function PhoneUI() {
     const activeLightId = useStore((s) => s.activeLightId);
     const lightStates = useStore((s) => s.lightStates);
     const toggleLight = useStore((s) => s.toggleLight);
+    const isMobile = useStore((s) => s.isMobile);
 
     const isVisible = activeLightId !== null;
     const isOn = activeLightId ? !!lightStates[activeLightId] : false;
@@ -21,7 +22,7 @@ export function PhoneUI() {
     };
 
     return (
-        <div className={`phone-container ${isVisible ? 'phone-visible' : ''}`}>
+        <div className={`phone-container ${isVisible ? 'phone-visible' : ''} ${isMobile ? 'is-mobile' : ''}`}>
             {/* iPhone frame */}
             <div className="phone-frame">
                 {/* Notch */}
