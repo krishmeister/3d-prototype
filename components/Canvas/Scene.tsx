@@ -265,7 +265,7 @@ export function Scene() {
 
     // Hardcoded light positions to ensure stability and avoid runtime detection issues
     const lightPositions: LightPosition[] = useMemo(() => [
-        { id: 'light_main_1', position: [9.70, 0.4, -14.39] },
+        { id: 'light_main_1', position: [9.70, 1.6, -14.39] },
         // { id: 'light_main_2', position: [19.2, 0.4, -9.8] }, // Temporarily disabled second arrow to focus on the user's target
     ], []);
 
