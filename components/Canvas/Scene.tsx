@@ -182,13 +182,13 @@ function CameraRig() {
             // Fly smoothly FROM current orbit position TO spawn point
             // No sudden Y jump — the tween handles the full path
             gsap.to(camera.position, {
-                x: 0,
+                x: -12,
                 y: 1.7,
-                z: 25,
+                z: 30,
                 duration: 2.5,
                 ease: 'power2.inOut',
                 onUpdate: () => {
-                    camera.lookAt(0, 2, 0);
+                    camera.lookAt(5, 2, 0);
                 },
                 onComplete: () => {
                     // Allow movement only after landing
