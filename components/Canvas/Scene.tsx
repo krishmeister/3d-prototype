@@ -265,8 +265,8 @@ export function Scene() {
 
     // Hardcoded light positions to ensure stability and avoid runtime detection issues
     const lightPositions: LightPosition[] = useMemo(() => [
-        { id: 'light_main_1', position: [4.2, 0.1, -10.5] },
-        { id: 'light_main_2', position: [19.2, 0.1, -9.8] },
+        { id: 'light_main_1', position: [4.2, 0.4, -10.5] },
+        { id: 'light_main_2', position: [19.2, 0.4, -9.8] },
     ], []);
 
     // Removed handleLightsDetected as we are using fixed positions
