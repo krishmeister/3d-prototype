@@ -1,26 +1,25 @@
 'use client';
 
-import React, { useLayoutEffect, useRef, useCallback } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { Mesh, Group, Box3, Vector3, MeshStandardMaterial, TextureLoader, Color, RepeatWrapping } from 'three';
+import { Mesh, Group, Box3, Vector3, MeshStandardMaterial, Color, RepeatWrapping } from 'three';
 
 // Material names that contain the Playboy logo
 const LOGO_WALL_MATERIAL = 'Model001_Material128_32';   // Large logo on sandstone wall
 const LOGO_GREEN_MATERIAL = 'Model001_Material128_34';  // Small logo on green fabric
 
 // Material names associated with pendant hanging lights
-// These were identified by extracting textures and matching to the dome-shaped lamp meshes
 const PENDANT_LIGHT_MATERIALS = new Set([
-    'Model001_Material128_57', // Lamp shade/body (room 1)
-    'Model001_Material128_58', // Lamp chain/fixture (room 1)
-    'Model001_Material128_87', // Lamp detail (room 1)
-    'Model001_Material128_60', // Lamp bar/rail (room 2)
-    'Model001_Material128_61', // Lamp shade/body (room 2)
-    'Model001_Material128_62', // Lamp wire (room 2)
-    'Model001_Material128_63', // Lamp bottom (room 2)
-    'Model001_Material128_92', // Lamp detail (room 2)
-    'Model001_Material128_93', // Lamp detail (room 2)
+    'Model001_Material128_57',
+    'Model001_Material128_58',
+    'Model001_Material128_87',
+    'Model001_Material128_60',
+    'Model001_Material128_61',
+    'Model001_Material128_62',
+    'Model001_Material128_63',
+    'Model001_Material128_92',
+    'Model001_Material128_93',
 ]);
 
 export interface LightPosition {
@@ -36,26 +35,20 @@ export function Apartment({ onLightsDetected }: ApartmentProps) {
     const { scene } = useGLTF('/wiser-apartment2.glb');
     const groupRef = useRef<Group>(null);
     const lightsDetectedRef = useRef(false);
+    const sceneReadyRef = useRef(false);
 
+    // Step 1: Reposition the scene and fix materials (runs before paint)
     useLayoutEffect(() => {
-        // Calculate the bounding box of the model to auto-center and ground it
         const box = new Box3().setFromObject(scene);
         const center = new Vector3();
         box.getCenter(center);
-        const size = new Vector3();
-        box.getSize(size);
 
         // Offset the primitive so the center of the floor is at [0,0,0]
-        // We want the BOTTOM of the box to be at Y=0
         scene.position.x = -center.x;
         scene.position.y = -box.min.y;
         scene.position.z = -center.z;
 
-        // Force ALL child world matrices to update with the new position offset
-        // This is critical for consistent light detection across environments
-        scene.updateMatrixWorld(true);
-
-        // First pass: collect a reference sandstone wall texture from a known wall material
+        // First pass: collect a reference sandstone wall texture
         let wallTexture: any = null;
         scene.traverse((obj) => {
             if (obj instanceof Mesh) {
@@ -66,10 +59,7 @@ export function Apartment({ onLightsDetected }: ApartmentProps) {
             }
         });
 
-        // Collect pendant light world positions
-        const lightMeshPositions: Map<string, Vector3[]> = new Map();
-
-        // Second pass: replace logo materials, set shadows, and detect lights
+        // Second pass: replace logo materials and set shadows
         scene.traverse((obj) => {
             if (obj instanceof Mesh) {
                 obj.castShadow = true;
@@ -77,7 +67,6 @@ export function Apartment({ onLightsDetected }: ApartmentProps) {
 
                 const mat = obj.material as MeshStandardMaterial;
 
-                // Replace the large Playboy wall logo with sandstone wall texture
                 if (mat?.name === LOGO_WALL_MATERIAL && wallTexture) {
                     const newMat = mat.clone();
                     newMat.map = wallTexture.clone();
@@ -89,7 +78,6 @@ export function Apartment({ onLightsDetected }: ApartmentProps) {
                     obj.material = newMat;
                 }
 
-                // Replace the small green fabric logo with plain green
                 if (mat?.name === LOGO_GREEN_MATERIAL) {
                     const newMat = mat.clone();
                     newMat.map = null;
@@ -97,18 +85,32 @@ export function Apartment({ onLightsDetected }: ApartmentProps) {
                     newMat.needsUpdate = true;
                     obj.material = newMat;
                 }
+            }
+        });
 
-                // Detect pendant light meshes
+        sceneReadyRef.current = true;
+    }, [scene]);
+
+    // Step 2: Detect lights inside the render loop AFTER Three.js has updated all world matrices.
+    // useLayoutEffect runs before the renderer, so world matrices may not be correct yet.
+    // useFrame runs INSIDE the render loop, guaranteeing consistent positions everywhere.
+    useFrame(() => {
+        if (lightsDetectedRef.current || !sceneReadyRef.current || !onLightsDetected) return;
+        lightsDetectedRef.current = true;
+
+        const lightMeshPositions: Map<string, Vector3[]> = new Map();
+
+        scene.traverse((obj) => {
+            if (obj instanceof Mesh) {
+                const mat = obj.material as MeshStandardMaterial;
+
                 if (PENDANT_LIGHT_MATERIALS.has(mat?.name)) {
-                    // Get world position of this mesh
                     const worldPos = new Vector3();
-                    obj.updateWorldMatrix(true, false);
                     const meshBox = new Box3().setFromObject(obj);
                     meshBox.getCenter(worldPos);
 
-                    // Cluster by proximity (lights within 5 units of each other are one cluster)
                     let foundCluster = false;
-                    for (const [key, positions] of lightMeshPositions) {
+                    for (const [, positions] of lightMeshPositions) {
                         const clusterCenter = positions[0];
                         const dist = new Vector3(worldPos.x, 0, worldPos.z)
                             .distanceTo(new Vector3(clusterCenter.x, 0, clusterCenter.z));
@@ -125,24 +127,21 @@ export function Apartment({ onLightsDetected }: ApartmentProps) {
             }
         });
 
-        // Compute cluster centers and report
-        if (!lightsDetectedRef.current && onLightsDetected) {
-            const lights: LightPosition[] = [];
-            let idx = 0;
-            for (const [, positions] of lightMeshPositions) {
-                const avg = new Vector3();
-                positions.forEach(p => avg.add(p));
-                avg.divideScalar(positions.length);
-                lights.push({
-                    id: `pendant_light_${idx}`,
-                    position: [avg.x, 0.1, avg.z], // Place arrow at floor level under the light
-                });
-                idx++;
-            }
-            lightsDetectedRef.current = true;
-            onLightsDetected(lights);
+        const lights: LightPosition[] = [];
+        let idx = 0;
+        for (const [, positions] of lightMeshPositions) {
+            const avg = new Vector3();
+            positions.forEach(p => avg.add(p));
+            avg.divideScalar(positions.length);
+            lights.push({
+                id: `pendant_light_${idx}`,
+                position: [avg.x, 0.1, avg.z],
+            });
+            idx++;
         }
-    }, [scene, onLightsDetected]);
+        console.log('Detected pendant lights (useFrame):', JSON.stringify(lights));
+        onLightsDetected(lights);
+    });
 
     return (
         <group ref={groupRef} name="apartment-group">
