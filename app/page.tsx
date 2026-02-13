@@ -1,5 +1,6 @@
 import { Scene } from '@/components/Canvas/Scene';
 import { Overlay } from '@/components/UI/Overlay';
+import { PhoneUI } from '@/components/UI/PhoneUI';
 
 export default function Home() {
     return (
@@ -8,6 +9,7 @@ export default function Home() {
                 <Scene />
             </div>
             <Overlay />
+            <PhoneUI />
         </main>
     );
 }
