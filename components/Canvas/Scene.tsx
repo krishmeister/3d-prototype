@@ -285,6 +285,22 @@ export function Scene() {
         setPhase('setup');
     }, [setPhase]);
 
+
+
+    // Debug: Update coordinate display
+    useFrame((state) => {
+        const overlay = document.getElementById('debug-overlay');
+        if (overlay) {
+            const { x, y, z } = state.camera.position;
+            const elX = document.getElementById('debug-x');
+            const elY = document.getElementById('debug-y');
+            const elZ = document.getElementById('debug-z');
+            if (elX) elX.innerText = x.toFixed(2);
+            if (elY) elY.innerText = y.toFixed(2);
+            if (elZ) elZ.innerText = z.toFixed(2);
+        }
+    });
+
     return (
         <div className="h-full w-full bg-black">
             <KeyboardControls map={map}>
